@@ -16,7 +16,7 @@ Cada tabela tem seu próprio dump (gerado com `mysqldump`, em 29/10/2026):
 | `livraria_item_pedido.sql` | `item_pedido` | 13 |
 
 ## Modelo de dados
-
+ 
 ```
 autor ──┐                       cliente
         ├──< livro >──┐            │
