@@ -1,173 +1,96 @@
-#  Banco de Dados — Livraria
+# Hospital DB
 
-Banco de dados relacional de uma livraria, feito em **MySQL 8.0**. Controla autores, categorias, livros, clientes, pedidos e os itens de cada pedido.
+Banco de dados relacional de um hospital, feito em MySQL. Ele guarda pacientes, médicos, consultas, prescrições, quartos e internações.
 
-## Estrutura do projeto
+## Como usar
 
-Cada tabela tem seu próprio dump (gerado com `mysqldump`, em 29/10/2026):
+1. Abra o MySQL (Workbench, terminal ou outro cliente).
+2. Execute o script SQL do projeto.
+3. O banco `hospital_db` será criado junto com as tabelas e os índices.
 
-| Arquivo | Tabela | Registros |
-|---|---|---|
-| `livraria_autor.sql` | `autor` | 6 |
-| `livraria_categoria.sql` | `categoria` | 5 |
-| `livraria_cliente.sql` | `cliente` | 6 |
-| `livraria_livro.sql` | `livro` | 10 |
-| `livraria_pedido.sql` | `pedido` | 8 |
-| `livraria_item_pedido.sql` | `item_pedido` | 13 |
+> Atenção: o script começa apagando as tabelas que já existirem (`DROP TABLE IF EXISTS`). Isso é útil para rodar de novo do zero, mas apaga os dados que estiverem lá.
 
-## Modelo de dados
- 
-```
-autor ──┐                       cliente
-        ├──< livro >──┐            │
-categoria ┘           │            └──< pedido ──< item_pedido >── livro
-                      └────────────────────────────────┘
-```
+## Diagrama
 
-```mermaid
-erDiagram
-    AUTOR ||--o{ LIVRO : escreve
-    CATEGORIA ||--o{ LIVRO : classifica
-    CLIENTE ||--o{ PEDIDO : realiza
-    PEDIDO ||--|{ ITEM_PEDIDO : contem
-    LIVRO ||--o{ ITEM_PEDIDO : "aparece em"
-```
+<img width="1431" height="788" alt="Untitled" src="https://github.com/user-attachments/assets/2c4a4d38-e474-4ffd-819c-1fad272184d9" />
 
-### Tabelas
 
-**`autor`**
-| Coluna | Tipo | Observação |
-|---|---|---|
-| `id_autor` | INT | PK, auto incremento |
-| `nome` | VARCHAR(100) | obrigatório |
-| `nacionalidade` | VARCHAR(50) | opcional |
+## Tabelas
 
-**`categoria`**
-| Coluna | Tipo | Observação |
-|---|---|---|
-| `id_categoria` | INT | PK, auto incremento |
-| `nome` | VARCHAR(50) | obrigatório |
+### pacientes
 
-**`livro`**
-| Coluna | Tipo | Observação |
-|---|---|---|
-| `id_livro` | INT | PK, auto incremento |
-| `titulo` | VARCHAR(150) | obrigatório |
-| `ano_publicacao` | INT | opcional |
-| `preco` | DECIMAL(8,2) | obrigatório |
-| `estoque` | INT | obrigatório, padrão 0 |
-| `id_autor` | INT | FK → `autor` |
-| `id_categoria` | INT | FK → `categoria` |
+| Campo | Tipo | Regras |
+|-------|------|--------|
+| id_paciente | int | chave primária, auto incremento |
+| nome_paciente | varchar(100) | obrigatório |
+| cpf | char(14) | obrigatório, único |
+| data_nascimento | date | obrigatório |
+| telefone_paciente | char(15) | opcional |
+| convenio | char(50) | obrigatório |
 
-**`cliente`**
-| Coluna | Tipo | Observação |
-|---|---|---|
-| `id_cliente` | INT | PK, auto incremento |
-| `nome` | VARCHAR(100) | obrigatório |
-| `email` | VARCHAR(100) | obrigatório, **único** |
-| `cidade` | VARCHAR(60) | opcional |
-| `data_cadastro` | DATE | opcional |
+### medicos
 
-**`pedido`**
-| Coluna | Tipo | Observação |
-|---|---|---|
-| `id_pedido` | INT | PK, auto incremento |
-| `id_cliente` | INT | FK → `cliente` |
-| `data_pedido` | DATE | obrigatório |
-| `status` | VARCHAR(20) | Entregue, Enviado, Pendente, Cancelado |
-| `forma_pagamento` | VARCHAR(20) | Pix, Cartão, Boleto |
+| Campo | Tipo | Regras |
+|-------|------|--------|
+| id_medico | int | chave primária, auto incremento |
+| nome_medico | char(100) | obrigatório |
+| crm | char(12) | obrigatório, único |
+| especialidade | char(50) | obrigatório |
 
-**`item_pedido`**
-| Coluna | Tipo | Observação |
-|---|---|---|
-| `id_item` | INT | PK, auto incremento |
-| `id_pedido` | INT | FK → `pedido` |
-| `id_livro` | INT | FK → `livro` |
-| `quantidade` | INT | obrigatório |
-| `preco_unitario` | DECIMAL(8,2) | preço praticado na venda |
+### quartos
 
-> O `preco_unitario` fica no item para preservar o valor cobrado, mesmo que o `preco` do livro mude depois.
+| Campo | Tipo | Regras |
+|-------|------|--------|
+| id_quarto | int | chave primária, auto incremento |
+| numero_quarto | char(3) | obrigatório, único |
+| andar | char(3) | obrigatório |
+| tipo_quarto | char(30) | obrigatório |
+| status_quarto | char(20) | obrigatório, padrão `Livre` |
 
-## Como restaurar
+### internacoes
 
-Requisitos: MySQL 8.0 ou superior.
+| Campo | Tipo | Regras |
+|-------|------|--------|
+| id_internacao | int | chave primária, auto incremento |
+| id_paciente | int | obrigatório, chave estrangeira de `pacientes` |
+| id_quarto | int | obrigatório, chave estrangeira de `quartos` |
+| data_entrada | date | obrigatório |
+| data_saida | date | opcional (vazio enquanto o paciente está internado) |
+| valor_diaria | decimal(10,2) | obrigatório |
 
-1. Crie o banco:
+### consultas
 
-```sql
-CREATE DATABASE livraria CHARACTER SET utf8mb4;
-```
+| Campo | Tipo | Regras |
+|-------|------|--------|
+| id_consulta | int | chave primária, auto incremento |
+| data_consulta | datetime | obrigatório |
+| status_consulta | char(20) | opcional |
+| valor_consulta | decimal(10,2) | opcional |
+| id_paciente | int | obrigatório, chave estrangeira de `pacientes` |
+| id_medico | int | obrigatório, chave estrangeira de `medicos` |
 
-2. Importe as tabelas **nesta ordem**, por causa das chaves estrangeiras:
+### prescricoes
 
-```bash
-mysql -u root -p livraria < livraria_autor.sql
-mysql -u root -p livraria < livraria_categoria.sql
-mysql -u root -p livraria < livraria_cliente.sql
-mysql -u root -p livraria < livraria_livro.sql
-mysql -u root -p livraria < livraria_pedido.sql
-mysql -u root -p livraria < livraria_item_pedido.sql
-```
+| Campo | Tipo | Regras |
+|-------|------|--------|
+| id_prescricao | int | chave primária, auto incremento |
+| id_consulta | int | obrigatório, chave estrangeira de `consultas` |
+| medicamento | char(100) | obrigatório |
+| dosagem | char(50) | obrigatório |
+| quantidade | char(30) | obrigatório |
 
-Os dumps usam `DROP TABLE IF EXISTS`, então reimportar sobrescreve a tabela existente.
+## Relacionamentos
 
-## Exemplos de consultas
+- Um paciente pode ter várias consultas, e cada consulta é de um paciente.
+- Um médico pode atender várias consultas, e cada consulta tem um médico.
+- Uma consulta pode ter várias prescrições, e cada prescrição pertence a uma consulta.
+- Um paciente pode ter várias internações, e cada internação é de um paciente.
+- Um quarto pode receber várias internações ao longo do tempo, e cada internação usa um quarto.
 
-**Valor total de cada pedido**
-```sql
-SELECT p.id_pedido, c.nome AS cliente, p.status,
-       SUM(i.quantidade * i.preco_unitario) AS total
-FROM pedido p
-JOIN cliente c     ON c.id_cliente = p.id_cliente
-JOIN item_pedido i ON i.id_pedido  = p.id_pedido
-GROUP BY p.id_pedido, c.nome, p.status;
-```
+## Índices
 
-**Livros mais vendidos**
-```sql
-SELECT l.titulo, SUM(i.quantidade) AS unidades_vendidas
-FROM item_pedido i
-JOIN livro l ON l.id_livro = i.id_livro
-GROUP BY l.titulo
-ORDER BY unidades_vendidas DESC;
-```
-
-**Livros com seus autores e categorias**
-```sql
-SELECT l.titulo, a.nome AS autor, cat.nome AS categoria, l.preco, l.estoque
-FROM livro l
-JOIN autor a        ON a.id_autor = l.id_autor
-JOIN categoria cat  ON cat.id_categoria = l.id_categoria
-ORDER BY l.titulo;
-```
-
-**Faturamento por categoria (sem pedidos cancelados)**
-```sql
-SELECT cat.nome AS categoria,
-       SUM(i.quantidade * i.preco_unitario) AS faturamento
-FROM item_pedido i
-JOIN pedido p       ON p.id_pedido = i.id_pedido
-JOIN livro l        ON l.id_livro = i.id_livro
-JOIN categoria cat  ON cat.id_categoria = l.id_categoria
-WHERE p.status <> 'Cancelado'
-GROUP BY cat.nome
-ORDER BY faturamento DESC;
-```
-
-**Livros com estoque baixo (menos de 10 unidades)**
-```sql
-SELECT titulo, estoque FROM livro WHERE estoque < 10 ORDER BY estoque;
-```
-
-**Clientes por cidade**
-```sql
-SELECT cidade, COUNT(*) AS clientes
-FROM cliente
-GROUP BY cidade
-ORDER BY clientes DESC;
-```
-
-## Tecnologias
-
-- MySQL 8.0 (InnoDB, `utf8mb4`)
-- Dumps gerados com `mysqldump` 10.13
+| Índice | Tabela | Coluna | Para que serve |
+|--------|--------|--------|----------------|
+| idx_pacientes_nome | pacientes | nome_paciente | buscar pacientes pelo nome |
+| idx_medicos_especialidade | medicos | especialidade | buscar médicos por especialidade |
+| idx_consultas_data | consultas | data_consulta | buscar consultas por data |
