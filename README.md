@@ -1,4 +1,4 @@
-# 📚 Banco de Dados — Livraria
+#  Banco de Dados — Livraria
 
 Banco de dados relacional de uma livraria, feito em **MySQL 8.0**. Controla autores, categorias, livros, clientes, pedidos e os itens de cada pedido.
 
